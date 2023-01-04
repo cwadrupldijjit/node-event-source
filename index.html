@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        
+        <title>Http 2 attempts</title>
+    </head>
+    
+    <body>
+        <h1>Server-sent Events:</h1>
+        
+        <p><strong>Status:</strong> <span id="status">Not yet started</span></p>
+        
+        <ul></ul>
+        
+        <script type="module">
+            const initialRequest = new EventSource('http://localhost:3038');
+            
+            initialRequest.addEventListener('open', (event) => {
+                document.querySelector('#status').innerText = 'Server connection open';
+            });
+            
+            initialRequest.addEventListener('error', (event) => {
+                initialRequest.close();
+                document.querySelector('#status').innerText =
+                    'Server errored, resulting in the readyState: ' +
+                    initialRequest.readyState +
+                    ' (' +
+                        Object.keys(Reflect.getPrototypeOf(initialRequest))
+                            .find(k => k[0].toUpperCase() == k[0] && initialRequest[k] == initialRequest.readyState) +
+                    ')';
+                console.log(event);
+            });
+            
+            initialRequest.addEventListener('message', (event) => {
+                const newEventItem = document.createElement('li');
+                
+                newEventItem.innerText = JSON.parse(event.data).message;
+                
+                document.querySelector('ul').append(newEventItem);
+            });
+        </script>
+    </body>
+</html>
