@@ -6,7 +6,7 @@
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         
-        <title>Http 2 attempts</title>
+        <title>Server-sent events</title>
     </head>
     
     <body>
@@ -17,7 +17,7 @@
         <ul></ul>
         
         <script type="module">
-            const initialRequest = new EventSource('http://localhost:3038');
+            const initialRequest = new EventSource('http://localhost:3038/event-stream');
             
             initialRequest.addEventListener('open', (event) => {
                 document.querySelector('#status').innerText = 'Server connection open';
@@ -32,7 +32,6 @@
                         Object.keys(Reflect.getPrototypeOf(initialRequest))
                             .find(k => k[0].toUpperCase() == k[0] && initialRequest[k] == initialRequest.readyState) +
                     ')';
-                console.log(event);
             });
             
             initialRequest.addEventListener('message', (event) => {
