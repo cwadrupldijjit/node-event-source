@@ -17,7 +17,7 @@
         <ul></ul>
         
         <script type="module">
-            const initialRequest = new EventSource('http://localhost:3038/event-stream');
+            const initialRequest = new EventSource('/event-stream');
             
             initialRequest.addEventListener('open', (event) => {
                 document.querySelector('#status').innerText = 'Server connection open';

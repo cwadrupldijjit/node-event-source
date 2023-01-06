@@ -1,7 +1,15 @@
+import { readFile } from 'fs/promises';
+import { dirname, join } from 'path';
+import { URL } from 'url';
 import express, { NextFunction, Request, Response } from 'express';
+import parseCsp from 'content-security-policy-parser';
+import { getCSP as serializeCsp } from 'csp-header';
 import helmet from 'helmet';
 import cors from 'cors';
 import { uid } from 'uid';
+import { parse as parseHtml } from 'node-html-parser';
+
+const __dirname = new URL(dirname(import.meta.url)).pathname.slice(Number(process.platform == 'win32'));
 
 const app = express();
 
@@ -22,10 +30,10 @@ eventSource.init = function init() {
     };
 };
 
-// I can't see how to avoid having this extra step with the middleware...
+// I can't see how to avoid having this extra step with the middleware in order to get the res.isEventStream...
 app.use(eventSource.init());
 
-app.all('/event-stream', eventSource(), (req, res, next) => {
+app.get('/event-stream', eventSource(), (req, res, next) => {
     console.log(Date.now(), 'This is an event stream:', res.isEventStream);
     let count = 0;
     
@@ -39,6 +47,22 @@ app.all('/event-stream', eventSource(), (req, res, next) => {
         }
         res.sendMessage({ message: 'this is event number ' + count++ });
     }, 1000);
+});
+
+// serve up the index.html (because of helmet, tweak the CSP settings, too)
+app.all('*', async (req, res) => {
+    const nonce = uid(15);
+    
+    const indexHtml = parseHtml(await readFile(join(__dirname, 'index.html'), 'utf-8'));
+    indexHtml.querySelector('script').setAttribute('nonce', nonce);
+    
+    const csp = parseCsp(res.getHeader('Content-Security-Policy') as string);
+    
+    csp['script-src'].push(`'nonce-${nonce}'`);
+    
+    res.setHeader('Content-Security-Policy', serializeCsp({ directives: csp }));
+    
+    res.send(indexHtml.innerHTML);
 });
 
 app.listen(3038, () => {
